@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星降る学園 ～放課後の約束～</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&display=swap');
+
+body {
+  font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+  background: #0a0a1a;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+#game {
+  width: 900px;
+  height: 600px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(120, 80, 200, 0.3);
+}
+
+#background {
+  position: absolute;
+  inset: 0;
+  transition: background 1s ease;
+}
+
+.bg-school { background: linear-gradient(135deg, #87CEEB 0%, #E0F0FF 40%, #FFF8DC 100%); }
+.bg-sunset { background: linear-gradient(180deg, #FF6B35 0%, #FF8C61 30%, #FFB088 60%, #2D1B69 100%); }
+.bg-night { background: linear-gradient(180deg, #0B0B2B 0%, #1A1A4E 40%, #2D2D6B 100%); }
+.bg-cafe { background: linear-gradient(135deg, #8B6914 0%, #D4A853 30%, #F5E6CC 60%, #FFF8F0 100%); }
+.bg-rain { background: linear-gradient(180deg, #4A5568 0%, #718096 40%, #A0AEC0 70%, #CBD5E0 100%); }
+.bg-sakura { background: linear-gradient(135deg, #FFB7C5 0%, #FFC0CB 30%, #FFE4E9 60%, #FFF5F7 100%); }
+.bg-library { background: linear-gradient(135deg, #654321 0%, #8B7355 30%, #C4A882 60%, #F5E6CC 100%); }
+.bg-rooftop { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #e94560 100%); }
+
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  border-radius: 50%;
+  animation: twinkle 2s infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+
+.sakura-petal {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(ellipse, #FFB7C5, #FF69B4);
+  border-radius: 50% 0 50% 0;
+  opacity: 0.7;
+  animation: fall linear infinite;
+  pointer-events: none;
+}
+@keyframes fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { transform: translateY(620px) rotate(720deg); opacity: 0; }
+}
+
+.rain-drop {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(transparent, rgba(174, 194, 224, 0.6));
+  pointer-events: none;
+  animation: rainFall linear infinite;
+}
+@keyframes rainFall {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(620px); opacity: 0.3; }
+}
+
+#character-area {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 350px;
+  pointer-events: none;
+}
+
+.character-sprite {
+  transition: all 0.5s ease;
+  filter: drop-shadow(0 8px 30px rgba(0,0,0,0.4));
+  animation: charAppear 0.6s ease-out;
+}
+.character-sprite svg {
+  width: 280px;
+  height: 350px;
+}
+@keyframes charAppear {
+  from { transform: translateY(30px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+#textbox {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(180deg, rgba(10, 10, 30, 0.85), rgba(10, 10, 30, 0.95));
+  backdrop-filter: blur(10px);
+  border-top: 2px solid rgba(120, 80, 200, 0.5);
+  padding: 20px 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+#speaker {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding: 2px 12px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+  min-height: 24px;
+}
+
+#dialogue {
+  font-size: 16px;
+  line-height: 1.8;
+  flex: 1;
+  letter-spacing: 0.5px;
+}
+
+#click-indicator {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+#choices {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+  width: 500px;
+}
+
+.choice-btn {
+  background: linear-gradient(135deg, rgba(120, 80, 200, 0.8), rgba(80, 50, 160, 0.9));
+  border: 1px solid rgba(180, 140, 255, 0.5);
+  color: #fff;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  backdrop-filter: blur(10px);
+}
+.choice-btn:hover {
+  background: linear-gradient(135deg, rgba(160, 120, 240, 0.9), rgba(120, 80, 200, 1));
+  border-color: rgba(220, 180, 255, 0.8);
+  transform: translateX(8px);
+  box-shadow: 0 0 20px rgba(120, 80, 200, 0.5);
+}
+
+#title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #0B0B2B 0%, #1A1A4E 40%, #2D1B69 70%, #FF6B9D22 100%);
+  z-index: 20;
+}
+
+#title-screen h1 {
+  font-size: 42px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #FFB7C5, #FF69B4, #DDA0DD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  text-shadow: none;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+@keyframes titleGlow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+#title-screen .subtitle {
+  font-size: 20px;
+  color: rgba(255, 183, 197, 0.7);
+  margin-bottom: 50px;
+  letter-spacing: 8px;
+}
+
+#start-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 183, 197, 0.6);
+  color: #FFB7C5;
+  padding: 14px 60px;
+  font-size: 18px;
+  font-family: 'Noto Sans JP', sans-serif;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 4px;
+}
+#start-btn:hover {
+  background: rgba(255, 183, 197, 0.15);
+  border-color: #FFB7C5;
+  box-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
+}
+
+#affection-display {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  gap: 16px;
+  z-index: 5;
+  font-size: 13px;
+}
+.affection-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,0,0,0.4);
+  padding: 4px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+.affection-hearts {
+  color: #FF69B4;
+  font-size: 12px;
+}
+
+#day-display {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  background: rgba(0,0,0,0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  backdrop-filter: blur(5px);
+  z-index: 5;
+}
+
+#ending-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+  animation: fadeIn 2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#ending-screen h2 {
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+#ending-screen p {
+  font-size: 18px;
+  line-height: 2;
+  text-align: center;
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+#ending-screen .ending-label {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 8px;
+  letter-spacing: 4px;
+}
+
+#restart-btn {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 12px 40px;
+  font-size: 16px;
+  font-family: 'Noto Sans JP', sans-serif;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+#restart-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #fff;
+}
+
+.hidden { display: none !important; }
+
+.fade-transition {
+  animation: screenFade 0.8s ease;
+}
+@keyframes screenFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="background" class="bg-night">
+    <div class="stars" id="stars"></div>
+  </div>
+
+  <div id="title-screen">
+    <h1>星降る学園</h1>
+    <div class="subtitle">～放課後の約束～</div>
+    <button id="start-btn" onclick="startGame()">はじめる</button>
+  </div>
+
+  <div id="day-display" class="hidden"></div>
+  <div id="affection-display" class="hidden"></div>
+
+  <div id="character-area">
+    <div class="character-sprite" id="character"></div>
+  </div>
+
+  <div id="textbox" class="hidden">
+    <div id="speaker"></div>
+    <div id="dialogue"></div>
+    <div id="click-indicator">▼</div>
+  </div>
+
+  <div id="choices" class="hidden"></div>
+
+  <div id="ending-screen" class="hidden"></div>
+</div>
+
+<script>
+const state = {
+  scene: 0,
+  step: 0,
+  affection: { hina: 0, ren: 0 },
+  day: 1,
+  typing: false,
+  typingTimeout: null,
+  flags: {},
+  currentText: '',
+};
+
+const CHARACTERS = {
+  hina: { name: '陽菜（ひな）', color: '#FF69B4' },
+  ren:  { name: '蓮（れん）',   color: '#4FC3F7' },
+  you:  { name: 'あなた',       color: '#B0BEC5' },
+  narr: { name: '',             color: 'transparent' },
+};
+
+const CHARACTER_SVG = {
+  hina: `<svg viewBox="0 0 280 350" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hina-hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A1B3D"/>
+      <stop offset="40%" stop-color="#1A0E2E"/>
+      <stop offset="100%" stop-color="#0D0620"/>
+    </linearGradient>
+    <linearGradient id="hina-hair-shine" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#5B3A8C" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#5B3A8C" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hina-skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDE8D0"/>
+      <stop offset="100%" stop-color="#F5D5B8"/>
+    </linearGradient>
+    <radialGradient id="hina-eye-l" cx="0.45" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#E847A0"/>
+      <stop offset="50%" stop-color="#9B2D6B"/>
+      <stop offset="100%" stop-color="#5C1A40"/>
+    </radialGradient>
+    <radialGradient id="hina-eye-r" cx="0.45" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#E847A0"/>
+      <stop offset="50%" stop-color="#9B2D6B"/>
+      <stop offset="100%" stop-color="#5C1A40"/>
+    </radialGradient>
+    <linearGradient id="hina-uniform" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1B2A4A"/>
+      <stop offset="100%" stop-color="#0F1B33"/>
+    </linearGradient>
+    <radialGradient id="hina-blush-l" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FF6B8A" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FF6B8A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Back hair - long flowing -->
+  <path d="M80,100 Q60,120 50,180 Q42,240 48,310 Q50,340 55,350 L95,350 Q88,300 90,240 Q92,200 95,160 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="1"/>
+  <path d="M200,100 Q220,120 230,180 Q238,240 232,310 Q230,340 225,350 L185,350 Q192,300 190,240 Q188,200 185,160 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="1"/>
+  <!-- Extra back hair volume -->
+  <path d="M55,350 Q45,320 42,260 Q40,200 50,150 L60,140 Q48,200 50,270 Q52,330 60,350 Z" fill="#160B28" stroke="#1A0A2E" stroke-width="0.5"/>
+  <path d="M225,350 Q235,320 238,260 Q240,200 230,150 L220,140 Q232,200 230,270 Q228,330 220,350 Z" fill="#160B28" stroke="#1A0A2E" stroke-width="0.5"/>
+
+  <!-- Neck -->
+  <rect x="122" y="175" width="36" height="30" rx="5" fill="url(#hina-skin)"/>
+
+  <!-- Uniform body -->
+  <path d="M95,200 Q90,210 85,240 Q80,280 78,350 L202,350 Q200,280 195,240 Q190,210 185,200 Q170,195 140,193 Q110,195 95,200 Z" fill="url(#hina-uniform)" stroke="#0A1225" stroke-width="1"/>
+  <!-- Collar -->
+  <path d="M115,198 L140,230 L165,198" fill="none" stroke="#FFF" stroke-width="2.5"/>
+  <path d="M112,196 L140,232 L168,196" fill="none" stroke="#FFF" stroke-width="1" opacity="0.3"/>
+  <!-- Sailor collar -->
+  <path d="M95,200 Q105,195 115,198 L140,230 L165,198 Q175,195 185,200 Q178,208 170,218 Q155,235 140,240 Q125,235 110,218 Q102,208 95,200 Z" fill="#2A4080" stroke="#1A2860" stroke-width="1"/>
+  <!-- Ribbon -->
+  <path d="M133,202 Q128,210 125,218 L140,212 L155,218 Q152,210 147,202 Z" fill="#E8345A" stroke="#C0283D" stroke-width="0.5"/>
+  <circle cx="140" cy="210" r="3" fill="#F04068"/>
+
+  <!-- Face -->
+  <ellipse cx="140" cy="135" rx="52" ry="58" fill="url(#hina-skin)" stroke="#E8C4A0" stroke-width="0.5"/>
+
+  <!-- Blush -->
+  <ellipse cx="108" cy="148" rx="14" ry="8" fill="url(#hina-blush-l)" />
+  <ellipse cx="172" cy="148" rx="14" ry="8" fill="url(#hina-blush-l)" />
+
+  <!-- Eyes - HxH style: large, detailed, expressive -->
+  <!-- Left eye -->
+  <ellipse cx="118" cy="135" rx="15" ry="14" fill="#FFF" stroke="#2A1B3D" stroke-width="1.8"/>
+  <ellipse cx="117" cy="136" rx="10" ry="11" fill="url(#hina-eye-l)"/>
+  <ellipse cx="117" cy="136" rx="6" ry="7" fill="#5C1A40"/>
+  <circle cx="117" cy="136" r="3.5" fill="#2A0D20"/>
+  <!-- Eye highlights -->
+  <circle cx="113" cy="131" r="3" fill="#FFF" opacity="0.9"/>
+  <circle cx="121" cy="133" r="1.5" fill="#FFF" opacity="0.7"/>
+  <circle cx="115" cy="140" r="1.2" fill="#FFB7C5" opacity="0.5"/>
+  <!-- Upper lash -->
+  <path d="M103,128 Q110,122 118,122 Q126,122 133,128" fill="none" stroke="#1A0A2E" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M103,128 Q100,126 98,123" fill="none" stroke="#1A0A2E" stroke-width="2" stroke-linecap="round"/>
+  <!-- Lower lash line -->
+  <path d="M106,144 Q118,148 130,144" fill="none" stroke="#2A1B3D" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Right eye -->
+  <ellipse cx="162" cy="135" rx="15" ry="14" fill="#FFF" stroke="#2A1B3D" stroke-width="1.8"/>
+  <ellipse cx="163" cy="136" rx="10" ry="11" fill="url(#hina-eye-r)"/>
+  <ellipse cx="163" cy="136" rx="6" ry="7" fill="#5C1A40"/>
+  <circle cx="163" cy="136" r="3.5" fill="#2A0D20"/>
+  <circle cx="159" cy="131" r="3" fill="#FFF" opacity="0.9"/>
+  <circle cx="167" cy="133" r="1.5" fill="#FFF" opacity="0.7"/>
+  <circle cx="161" cy="140" r="1.2" fill="#FFB7C5" opacity="0.5"/>
+  <path d="M147,128 Q154,122 162,122 Q170,122 177,128" fill="none" stroke="#1A0A2E" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M177,128 Q180,126 182,123" fill="none" stroke="#1A0A2E" stroke-width="2" stroke-linecap="round"/>
+  <path d="M150,144 Q162,148 174,144" fill="none" stroke="#2A1B3D" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Eyebrows - thin, expressive -->
+  <path d="M104,118 Q112,112 130,116" fill="none" stroke="#1A0A2E" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M176,118 Q168,112 150,116" fill="none" stroke="#1A0A2E" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Nose - subtle anime style -->
+  <path d="M139,148 L137,155 Q139,157 141,155" fill="none" stroke="#D4A88C" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Mouth - small, gentle -->
+  <path d="M132,164 Q136,168 140,168 Q144,168 148,164" fill="none" stroke="#D4707A" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M135,164 Q140,166 145,164" fill="#F0A0A8" opacity="0.3"/>
+
+  <!-- Front hair - bangs with side-swept style -->
+  <path d="M88,105 Q90,80 110,65 Q130,55 145,58 Q140,70 125,82 Q110,95 100,115 Q95,125 93,130 Q88,118 88,105 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="1"/>
+  <path d="M192,105 Q190,80 170,65 Q155,58 145,58 Q148,70 158,80 Q172,95 180,115 Q184,125 186,130 Q192,118 192,105 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="1"/>
+  <!-- Center bangs -->
+  <path d="M110,65 Q120,58 135,56 Q130,70 120,85 Q112,98 108,112 L105,108 Q108,90 110,65 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="0.8"/>
+  <path d="M170,65 Q160,58 148,56 Q152,70 160,85 Q166,98 168,112 L172,108 Q170,90 170,65 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="0.8"/>
+  <path d="M125,58 Q135,52 150,56 Q145,65 140,78 Q135,90 133,100 L128,95 Q130,78 125,58 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="0.8"/>
+
+  <!-- Hair shine -->
+  <path d="M115,68 Q125,62 140,60 Q150,62 160,68 Q150,72 140,70 Q130,72 115,68 Z" fill="url(#hina-hair-shine)"/>
+  <path d="M95,100 Q100,90 108,85 Q105,95 100,108 Z" fill="#5B3A8C" opacity="0.2"/>
+
+  <!-- Top of head hair -->
+  <path d="M88,105 Q92,75 115,58 Q130,48 145,50 Q160,48 175,58 Q195,75 192,105 Q188,85 175,70 Q160,58 140,55 Q120,58 105,70 Q92,85 88,105 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="1.2"/>
+
+  <!-- Side hair strands -->
+  <path d="M88,130 Q82,150 78,180 Q76,200 80,220 Q82,210 83,190 Q85,165 90,140 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="0.8"/>
+  <path d="M192,130 Q198,150 202,180 Q204,200 200,220 Q198,210 197,190 Q195,165 190,140 Z" fill="url(#hina-hair)" stroke="#1A0A2E" stroke-width="0.8"/>
+</svg>`,
+
+  ren: `<svg viewBox="0 0 280 350" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ren-hair" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#C0C8D8"/>
+      <stop offset="30%" stop-color="#8A95AB"/>
+      <stop offset="100%" stop-color="#5A6580"/>
+    </linearGradient>
+    <linearGradient id="ren-hair-shine" x1="0.2" y1="0" x2="0.8" y2="0.5">
+      <stop offset="0%" stop-color="#E8EDF5" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#E8EDF5" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ren-skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5DCC0"/>
+      <stop offset="100%" stop-color="#ECCCAA"/>
+    </linearGradient>
+    <radialGradient id="ren-eye-l" cx="0.45" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#47A0E8"/>
+      <stop offset="50%" stop-color="#2D6B9B"/>
+      <stop offset="100%" stop-color="#1A405C"/>
+    </radialGradient>
+    <radialGradient id="ren-eye-r" cx="0.45" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#47A0E8"/>
+      <stop offset="50%" stop-color="#2D6B9B"/>
+      <stop offset="100%" stop-color="#1A405C"/>
+    </radialGradient>
+    <linearGradient id="ren-uniform" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#0D0D0D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Neck -->
+  <rect x="125" y="172" width="34" height="32" rx="4" fill="url(#ren-skin)"/>
+
+  <!-- Uniform body - gakuran style -->
+  <path d="M88,198 Q82,215 78,250 Q74,290 72,350 L208,350 Q206,290 202,250 Q198,215 192,198 Q175,192 142,190 Q108,192 88,198 Z" fill="url(#ren-uniform)" stroke="#000" stroke-width="1"/>
+  <!-- Collar stand (gakuran) -->
+  <path d="M108,196 Q120,190 142,188 Q164,190 176,196 L176,206 Q164,200 142,198 Q120,200 108,206 Z" fill="#222" stroke="#000" stroke-width="1"/>
+  <!-- Collar line -->
+  <line x1="142" y1="188" x2="142" y2="230" stroke="#333" stroke-width="0.8"/>
+  <!-- Buttons -->
+  <circle cx="142" cy="218" r="2.5" fill="#C0A050" stroke="#8A7030" stroke-width="0.5"/>
+  <circle cx="142" cy="238" r="2.5" fill="#C0A050" stroke="#8A7030" stroke-width="0.5"/>
+  <circle cx="142" cy="258" r="2.5" fill="#C0A050" stroke="#8A7030" stroke-width="0.5"/>
+  <!-- Shoulder seams -->
+  <path d="M108,198 Q95,202 85,210" fill="none" stroke="#333" stroke-width="0.8"/>
+  <path d="M176,198 Q185,202 195,210" fill="none" stroke="#333" stroke-width="0.8"/>
+
+  <!-- Face - slightly more angular/masculine -->
+  <path d="M140,82 Q190,82 192,120 Q193,145 185,158 Q178,170 165,178 Q152,184 140,185 Q128,184 115,178 Q102,170 95,158 Q87,145 88,120 Q90,82 140,82 Z" fill="url(#ren-skin)" stroke="#D4AA80" stroke-width="0.5"/>
+
+  <!-- Eyes - HxH style: sharp, intense, cat-like (Killua-inspired) -->
+  <!-- Left eye -->
+  <path d="M103,128 Q112,120 126,124 Q130,126 132,132 Q132,140 128,145 Q122,150 112,148 Q105,145 102,138 Q101,133 103,128 Z" fill="#FFF" stroke="#1A2040" stroke-width="1.8"/>
+  <ellipse cx="117" cy="136" rx="9" ry="10" fill="url(#ren-eye-l)"/>
+  <ellipse cx="117" cy="136" rx="5.5" ry="6.5" fill="#1A405C"/>
+  <circle cx="117" cy="136" r="3.2" fill="#0D2030"/>
+  <circle cx="113" cy="131" r="2.8" fill="#FFF" opacity="0.9"/>
+  <circle cx="120" cy="133" r="1.3" fill="#FFF" opacity="0.6"/>
+  <circle cx="115" cy="140" r="1" fill="#87CEEB" opacity="0.4"/>
+  <!-- Sharp upper lash -->
+  <path d="M102,128 Q110,120 120,120 Q128,121 133,126" fill="none" stroke="#1A1A2E" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M102,128 Q99,125 96,121" fill="none" stroke="#1A1A2E" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M133,126 Q135,124 137,122" fill="none" stroke="#1A1A2E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M105,146 Q115,149 128,144" fill="none" stroke="#1A2040" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Right eye -->
+  <path d="M177,128 Q168,120 154,124 Q150,126 148,132 Q148,140 152,145 Q158,150 168,148 Q175,145 178,138 Q179,133 177,128 Z" fill="#FFF" stroke="#1A2040" stroke-width="1.8"/>
+  <ellipse cx="163" cy="136" rx="9" ry="10" fill="url(#ren-eye-r)"/>
+  <ellipse cx="163" cy="136" rx="5.5" ry="6.5" fill="#1A405C"/>
+  <circle cx="163" cy="136" r="3.2" fill="#0D2030"/>
+  <circle cx="159" cy="131" r="2.8" fill="#FFF" opacity="0.9"/>
+  <circle cx="166" cy="133" r="1.3" fill="#FFF" opacity="0.6"/>
+  <circle cx="161" cy="140" r="1" fill="#87CEEB" opacity="0.4"/>
+  <path d="M178,128 Q170,120 160,120 Q152,121 147,126" fill="none" stroke="#1A1A2E" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M178,128 Q181,125 184,121" fill="none" stroke="#1A1A2E" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M147,126 Q145,124 143,122" fill="none" stroke="#1A1A2E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M175,146 Q165,149 152,144" fill="none" stroke="#1A2040" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Eyebrows - thick, sharp, expressive -->
+  <path d="M100,114 Q110,106 132,112" fill="none" stroke="#5A6580" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M180,114 Q170,106 148,112" fill="none" stroke="#5A6580" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Nose - defined, angular -->
+  <path d="M140,145 L137,156 Q139,159 142,157 L143,156" fill="none" stroke="#C8A080" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M137,156 Q136,157 135,156" fill="none" stroke="#C8A080" stroke-width="0.8" stroke-linecap="round"/>
+
+  <!-- Mouth - confident smirk -->
+  <path d="M128,168 Q135,172 142,171 Q150,172 157,168" fill="none" stroke="#B07060" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M152,168 Q155,167 157,168" fill="none" stroke="#B07060" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Hair - spiky, silver-grey, Killua-inspired -->
+  <!-- Base hair shape -->
+  <path d="M85,110 Q82,80 100,55 Q115,38 140,35 Q165,38 180,55 Q198,80 195,110 Q192,90 180,72 Q165,55 140,50 Q115,55 100,72 Q88,90 85,110 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="1.2"/>
+
+  <!-- Spiky hair strands -->
+  <!-- Center spike -->
+  <path d="M130,50 Q135,25 145,18 Q148,28 150,50 Q142,42 130,50 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <!-- Left spikes -->
+  <path d="M105,60 Q95,35 88,28 Q98,40 108,55 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M115,52 Q108,30 105,22 Q115,38 122,50 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M92,75 Q78,50 72,40 Q82,55 95,70 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <!-- Right spikes -->
+  <path d="M175,60 Q185,35 192,28 Q182,40 172,55 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M165,52 Q172,30 175,22 Q165,38 158,50 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M188,75 Q202,50 208,40 Q198,55 185,70 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+
+  <!-- Front bangs - messy, layered -->
+  <path d="M88,105 Q90,82 105,68 Q100,80 95,100 Q92,115 90,125 Q86,118 88,105 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M105,68 Q115,55 130,50 Q122,65 115,80 Q110,95 107,110 L102,105 Q105,85 105,68 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M145,50 Q158,52 170,65 Q162,58 150,62 Q142,70 138,85 Q135,95 135,105 L130,100 Q132,80 140,60 Q142,52 145,50 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M170,65 Q182,78 188,95 Q192,110 192,125 Q188,115 185,105 Q180,88 172,75 L170,65 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <!-- Extra messy strand over forehead -->
+  <path d="M125,55 Q132,45 140,42 Q135,55 130,70 Q128,78 126,85 L122,80 Q125,65 125,55 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+
+  <!-- Hair shine highlights -->
+  <path d="M110,50 Q125,42 145,40 Q160,42 175,50 Q160,48 140,46 Q120,48 110,50 Z" fill="url(#ren-hair-shine)"/>
+  <path d="M95,80 Q105,70 110,68 Q105,78 100,92 Z" fill="#E8EDF5" opacity="0.25"/>
+  <path d="M170,68 Q180,75 185,88 Q178,78 170,68 Z" fill="#E8EDF5" opacity="0.2"/>
+
+  <!-- Side hair near ears -->
+  <path d="M86,120 Q82,140 80,165 Q80,175 84,180 Q83,170 84,155 Q86,135 90,120 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+  <path d="M194,120 Q198,140 200,165 Q200,175 196,180 Q197,170 196,155 Q194,135 190,120 Z" fill="url(#ren-hair)" stroke="#4A5570" stroke-width="0.8"/>
+</svg>`,
+};
+
+const SCENES = [
+  // === DAY 1: 出会い ===
+  {
+    day: 1,
+    bg: 'bg-sakura',
+    effects: 'sakura',
+    steps: [
+      { speaker: 'narr', text: '四月――桜が舞う季節。\nあなたは星咲学園に転校してきた。' },
+      { speaker: 'narr', text: '新しい教室、新しい顔ぶれ。\n少しの不安と、小さな期待を胸に、放課後を迎えた。' },
+      { speaker: 'narr', text: '廊下を歩いていると、突然――' },
+    ],
+    next: 1,
+  },
+  {
+    day: 1,
+    bg: 'bg-school',
+    steps: [
+      { speaker: 'hina', text: 'きゃっ！ ご、ごめんなさい！\n前を見てなくて……！', char: 'hina' },
+      { speaker: 'narr', text: '角を曲がったところで、女の子とぶつかってしまった。\n彼女の腕から本が何冊も床に散らばる。' },
+      { speaker: 'hina', text: 'あっ、本が……！\nど、どうしよう、図書委員なのに……', char: 'hina' },
+      {
+        choice: true,
+        options: [
+          { text: '「大丈夫？ 一緒に拾うよ」', effects: { hina: 3 }, flag: 'helped_hina' },
+          { text: '「急いでるんだけど……」', effects: { hina: -1 } },
+          { text: '「すごい量の本だね。何を読んでるの？」', effects: { hina: 2 }, flag: 'asked_books' },
+        ]
+      },
+    ],
+    next: 2,
+  },
+  {
+    day: 1,
+    bg: 'bg-school',
+    steps: [
+      { speaker: 'hina', text: 'あ、ありがとう……。\n転校生さん、だよね？ 噂になってたよ。', char: 'hina', condition: () => state.flags.helped_hina || state.flags.asked_books },
+      { speaker: 'hina', text: '……あ、転校生さん、だよね。', char: 'hina', condition: () => !state.flags.helped_hina && !state.flags.asked_books },
+      { speaker: 'hina', text: '私、二年A組の日向 陽菜。\nよろしくね。', char: 'hina' },
+      { speaker: 'narr', text: 'そのとき、廊下の向こうから声が聞こえた。' },
+    ],
+    next: 3,
+  },
+  {
+    day: 1,
+    bg: 'bg-school',
+    steps: [
+      { speaker: 'ren', text: 'おーい、陽菜。また本落としたのか？\n相変わらずだな。', char: 'ren' },
+      { speaker: 'hina', text: 'れ、蓮くん！ べ、別にいいでしょ……！', char: 'hina' },
+      { speaker: 'ren', text: 'ん？ あんたが転校生か。\n俺は藤原 蓮。よろしくな。', char: 'ren' },
+      {
+        choice: true,
+        options: [
+          { text: '「よろしく。二人は仲がいいんだね」', effects: { ren: 1, hina: 1 } },
+          { text: '「蓮くん、かっこいい名前だね」', effects: { ren: 3 } },
+          { text: '「陽菜さんをからかうのは良くないよ」', effects: { hina: 3, ren: -1 }, flag: 'defended_hina' },
+        ]
+      },
+    ],
+    next: 4,
+  },
+  {
+    day: 1,
+    bg: 'bg-sunset',
+    steps: [
+      { speaker: 'ren', text: 'はは、面白いやつだな。\n……なあ、放課後ヒマなら、屋上来いよ。', char: 'ren' },
+      { speaker: 'ren', text: '俺の秘密の場所、教えてやるよ。', char: 'ren' },
+      { speaker: 'hina', text: 'あ、あの……私も、もしよかったら……\n図書室、案内するよ？ おすすめの本があるの。', char: 'hina' },
+      {
+        choice: true,
+        options: [
+          { text: '蓮と屋上に行く', effects: { ren: 3 }, flag: 'chose_ren_day1', next: 5 },
+          { text: '陽菜と図書室に行く', effects: { hina: 3 }, flag: 'chose_hina_day1', next: 6 },
+        ]
+      },
+    ],
+  },
+  // === DAY 1 分岐: 蓮ルート ===
+  {
+    day: 1,
+    bg: 'bg-sunset',
+    steps: [
+      { speaker: 'narr', text: '屋上への階段を上る。\n錆びたドアの向こうに、燃えるような夕焼けが広がっていた。' },
+      { speaker: 'ren', text: '……いい景色だろ。\nここ、俺しか知らない場所なんだ。', char: 'ren' },
+      { speaker: 'ren', text: '……なんでお前に教えたのか、自分でもわかんねーけど。', char: 'ren' },
+      { speaker: 'narr', text: '夕日に照らされた蓮の横顔は、\n教室で見せる軽い笑顔とは違って、少し寂しげだった。' },
+      { speaker: 'ren', text: '……まあ、また来いよ。\nいつでも歓迎するからさ。', char: 'ren' },
+    ],
+    next: 7,
+  },
+  // === DAY 1 分岐: 陽菜ルート ===
+  {
+    day: 1,
+    bg: 'bg-library',
+    steps: [
+      { speaker: 'narr', text: '図書室は放課後の静けさに包まれていた。\n窓から差し込む光が、本棚の背表紙を金色に染める。' },
+      { speaker: 'hina', text: 'ここが私の一番好きな場所なの。\n……って、つまらないって思うかな。', char: 'hina' },
+      { speaker: 'hina', text: 'この本、すごくいいんだよ。\n「星の降る夜に」っていう小説で……', char: 'hina' },
+      { speaker: 'narr', text: '本について語る陽菜の目は、キラキラと輝いていた。\n普段のおどおどした様子が嘘のように、生き生きとしている。' },
+      { speaker: 'hina', text: 'あ、ごめんね、一人で喋りすぎちゃった……\nでも、聞いてくれて嬉しかった。ありがとう。', char: 'hina' },
+    ],
+    next: 7,
+  },
+  // === DAY 2 ===
+  {
+    day: 2,
+    bg: 'bg-rain',
+    effects: 'rain',
+    steps: [
+      { speaker: 'narr', text: '翌日――空は朝からどんよりと曇り、\nやがて雨が降り始めた。' },
+      { speaker: 'narr', text: '放課後。教室にはもう誰もいない。\n窓の外では雨が静かに降り続いている。' },
+      { speaker: 'narr', text: '傘を忘れてきたことに気づいた。\n昇降口で立ち尽くしていると――' },
+    ],
+    next: 8,
+  },
+  {
+    day: 2,
+    bg: 'bg-rain',
+    effects: 'rain',
+    steps: [
+      { speaker: 'hina', text: '……あ、転校生さん。傘、ないの？', char: 'hina' },
+      { speaker: 'hina', text: 'よかったら……一緒に入る？\nその、私の傘、大きいから……。', char: 'hina' },
+      { speaker: 'narr', text: 'そこへ、走ってくる足音が聞こえた。' },
+      { speaker: 'ren', text: 'おっ、お前も傘なしか？\nしょうがねーな、俺の貸してやるよ。俺は走って帰るから。', char: 'ren' },
+      {
+        choice: true,
+        options: [
+          { text: '陽菜の傘に入れてもらう', effects: { hina: 3 }, flag: 'shared_umbrella' },
+          { text: '蓮の傘を借りる', effects: { ren: 3 }, flag: 'borrowed_umbrella' },
+          { text: '「二人ともありがとう。でも走って帰るよ！」', effects: { hina: 1, ren: 1 } },
+        ]
+      },
+    ],
+    next: 9,
+  },
+  {
+    day: 2,
+    bg: 'bg-rain',
+    effects: 'rain',
+    steps: [
+      { speaker: 'hina', text: '……ねえ、転校生さん。\nこの学校、好きになれそう？', char: 'hina', condition: () => state.flags.shared_umbrella },
+      { speaker: 'ren', text: '……風邪ひくなよ、お前。\nまあ、明日返してくれりゃいいから。', char: 'ren', condition: () => state.flags.borrowed_umbrella },
+      { speaker: 'narr', text: '雨音の中、不思議とあたたかい気持ちになった。', condition: () => state.flags.shared_umbrella || state.flags.borrowed_umbrella },
+      { speaker: 'narr', text: 'ずぶ濡れになりながら走って帰った。\n……少し、もったいないことをしたかもしれない。', condition: () => !state.flags.shared_umbrella && !state.flags.borrowed_umbrella },
+    ],
+    next: 10,
+  },
+  // === DAY 3 ===
+  {
+    day: 3,
+    bg: 'bg-school',
+    steps: [
+      { speaker: 'narr', text: '三日目――学園祭の準備が始まった。\nクラスの出し物は「星空カフェ」に決まった。' },
+      { speaker: 'ren', text: 'よし、俺は飾り付け担当な。\nお前も手伝えよ、転校生。', char: 'ren' },
+      { speaker: 'hina', text: 'わ、私はメニュー作りを……。\nあの、手伝ってくれる人、いないかな……。', char: 'hina' },
+      {
+        choice: true,
+        options: [
+          { text: '蓮と飾り付けをする', effects: { ren: 2 }, next: 11 },
+          { text: '陽菜のメニュー作りを手伝う', effects: { hina: 2 }, next: 12 },
+        ]
+      },
+    ],
+  },
+  // === DAY 3: 蓮ルート ===
+  {
+    day: 3,
+    bg: 'bg-cafe',
+    steps: [
+      { speaker: 'ren', text: 'へー、お前センスいいじゃん。\nこの星の飾り、いい感じだ。', char: 'ren' },
+      { speaker: 'narr', text: '脚立の上で作業する蓮に、飾りを手渡す。' },
+      { speaker: 'ren', text: '……なあ、ちょっと聞いてもいいか。', char: 'ren' },
+      { speaker: 'ren', text: '俺さ、実は来年から海外の学校に行くかもしれないんだ。\n親父の仕事の都合で。', char: 'ren' },
+      { speaker: 'ren', text: '……まだ誰にも言ってない。\nお前にだけ、なんとなく言いたくなった。', char: 'ren' },
+      {
+        choice: true,
+        options: [
+          { text: '「寂しくなるね……」', effects: { ren: 3 }, flag: 'ren_lonely' },
+          { text: '「海外、すごいじゃん！ 応援するよ」', effects: { ren: 2 }, flag: 'ren_support' },
+          { text: '「……行ってほしくない」', effects: { ren: 4 }, flag: 'ren_stay' },
+        ]
+      },
+    ],
+    next: 13,
+  },
+  // === DAY 3: 陽菜ルート ===
+  {
+    day: 3,
+    bg: 'bg-cafe',
+    steps: [
+      { speaker: 'hina', text: 'え、手伝ってくれるの？\nう、嬉しい……！', char: 'hina' },
+      { speaker: 'narr', text: '陽菜と一緒にメニューを考える。\n彼女は意外と味にこだわりがあった。' },
+      { speaker: 'hina', text: 'あのね、私ね……\n本当は、人と話すのがすごく苦手なの。', char: 'hina' },
+      { speaker: 'hina', text: 'でも、転校生さんと一緒にいると……\nなんだか、自然に話せる気がする。不思議だね。', char: 'hina' },
+      {
+        choice: true,
+        options: [
+          { text: '「陽菜さんといると僕も楽しいよ」', effects: { hina: 3 }, flag: 'hina_enjoy' },
+          { text: '「もっと自信を持っていいと思うよ」', effects: { hina: 2 }, flag: 'hina_confidence' },
+          { text: '「……もう、"転校生さん"じゃなくて名前で呼んで？」', effects: { hina: 4 }, flag: 'hina_name' },
+        ]
+      },
+    ],
+    next: 13,
+  },
+  // === DAY 3 夜 → エンディング分岐 ===
+  {
+    day: 3,
+    bg: 'bg-rooftop',
+    effects: 'stars',
+    steps: [
+      { speaker: 'narr', text: '学園祭前夜――。\n準備を終えたあなたは、一人で屋上に来ていた。' },
+      { speaker: 'narr', text: '見上げると、満天の星空が広がっている。\n流れ星が一つ、夜空を横切った。' },
+      { speaker: 'narr', text: 'そのとき、屋上のドアが開く音がした。' },
+    ],
+    next: -1, // special: ending branch
+  },
+];
+
+// ===== Ending scenes =====
+const ENDINGS = {
+  hina_true: {
+    bg: 'bg-rooftop',
+    effects: 'stars',
+    steps: [
+      { speaker: 'hina', text: '……あ、やっぱりここにいた。', char: 'hina' },
+      { speaker: 'hina', text: 'あのね、ずっと言いたかったことがあるの。', char: 'hina' },
+      { speaker: 'hina', text: '私……あなたに出会えて、変われた気がする。\n本の中だけじゃなくて、現実の世界も好きになれた。', char: 'hina' },
+      { speaker: 'hina', text: '……好き。あなたのことが、好きです。', char: 'hina' },
+      { speaker: 'narr', text: '流れ星が、二人の頭上を静かに横切った。\n\n陽菜の瞳に映る星が、涙のようにきらめいている。' },
+    ],
+    title: '「星に願いを」',
+    label: 'TRUE END — 陽菜ルート',
+    endBg: 'bg-rooftop',
+  },
+  ren_true: {
+    bg: 'bg-rooftop',
+    effects: 'stars',
+    steps: [
+      { speaker: 'ren', text: '……よう。お前も星、見に来たのか。', char: 'ren' },
+      { speaker: 'ren', text: 'なあ……俺、決めたよ。海外には行かない。', char: 'ren' },
+      { speaker: 'ren', text: 'お前がいるこの場所が、俺の居場所だって気づいたんだ。', char: 'ren' },
+      { speaker: 'ren', text: '……笑うなよ。俺、こういうの言い慣れてないんだから。\n……お前のことが、好きだ。', char: 'ren' },
+      { speaker: 'narr', text: '蓮の手が、そっとあなたの手を握った。\nその手は少しだけ震えていて、でもあたたかかった。' },
+    ],
+    title: '「この空の下で」',
+    label: 'TRUE END — 蓮ルート',
+    endBg: 'bg-rooftop',
+  },
+  hina_normal: {
+    bg: 'bg-rooftop',
+    effects: 'stars',
+    steps: [
+      { speaker: 'hina', text: '……あ、ここにいたんだ。\n星、綺麗だね。', char: 'hina' },
+      { speaker: 'hina', text: '学園祭、楽しみだね。\nこれからも……友達でいてくれる？', char: 'hina' },
+      { speaker: 'narr', text: '陽菜は静かに微笑んだ。\nその笑顔には、言葉にならない想いが隠れているようだった。' },
+    ],
+    title: '「まだ見ぬページ」',
+    label: 'NORMAL END — 陽菜ルート',
+    endBg: 'bg-sakura',
+  },
+  ren_normal: {
+    bg: 'bg-rooftop',
+    effects: 'stars',
+    steps: [
+      { speaker: 'ren', text: 'お、こんなとこで何してんだ。\n……星か。たまにはいいもんだな。', char: 'ren' },
+      { speaker: 'ren', text: '……また明日な、相棒。', char: 'ren' },
+      { speaker: 'narr', text: '蓮は軽く手を振って去っていった。\nその背中は、いつもより少しだけ小さく見えた。' },
+    ],
+    title: '「夕暮れのあと」',
+    label: 'NORMAL END — 蓮ルート',
+    endBg: 'bg-sunset',
+  },
+  alone: {
+    bg: 'bg-night',
+    effects: 'stars',
+    steps: [
+      { speaker: 'narr', text: '……誰も来なかった。\n\n星だけが静かに瞬いている。' },
+      { speaker: 'narr', text: 'でも、不思議と寂しくはなかった。\nこの学園での日々は、まだ始まったばかりなのだから。' },
+    ],
+    title: '「一人の夜空」',
+    label: 'NORMAL END',
+    endBg: 'bg-night',
+  },
+};
+
+function getEnding() {
+  const h = state.affection.hina;
+  const r = state.affection.ren;
+  if (h >= 10 && h > r) return 'hina_true';
+  if (r >= 10 && r > h) return 'ren_true';
+  if (h > r && h >= 5) return 'hina_normal';
+  if (r > h && r >= 5) return 'ren_normal';
+  if (h >= 5 && h === r) return Math.random() > 0.5 ? 'hina_normal' : 'ren_normal';
+  return 'alone';
+}
+
+// ===== DOM =====
+const bg = document.getElementById('background');
+const textbox = document.getElementById('textbox');
+const speakerEl = document.getElementById('speaker');
+const dialogueEl = document.getElementById('dialogue');
+const choicesEl = document.getElementById('choices');
+const charEl = document.getElementById('character');
+const dayEl = document.getElementById('day-display');
+const affEl = document.getElementById('affection-display');
+const clickInd = document.getElementById('click-indicator');
+const titleScreen = document.getElementById('title-screen');
+const endingScreen = document.getElementById('ending-screen');
+
+function createStars() {
+  const container = document.getElementById('stars');
+  container.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 70 + '%';
+    star.style.animationDelay = Math.random() * 2 + 's';
+    star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+    container.appendChild(star);
+  }
+}
+
+function clearEffects() {
+  document.querySelectorAll('.sakura-petal, .rain-drop').forEach(e => e.remove());
+}
+
+function addSakura() {
+  for (let i = 0; i < 15; i++) {
+    const petal = document.createElement('div');
+    petal.className = 'sakura-petal';
+    petal.style.left = Math.random() * 100 + '%';
+    petal.style.animationDuration = (Math.random() * 4 + 4) + 's';
+    petal.style.animationDelay = Math.random() * 6 + 's';
+    bg.appendChild(petal);
+  }
+}
+
+function addRain() {
+  for (let i = 0; i < 40; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'rain-drop';
+    drop.style.left = Math.random() * 100 + '%';
+    drop.style.height = (Math.random() * 20 + 10) + 'px';
+    drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
+    drop.style.animationDelay = Math.random() * 2 + 's';
+    bg.appendChild(drop);
+  }
+}
+
+function setBackground(bgClass, effects) {
+  bg.className = bgClass;
+  clearEffects();
+  const starsEl = document.getElementById('stars');
+  starsEl.classList.add('hidden');
+  if (effects === 'sakura') addSakura();
+  if (effects === 'rain') addRain();
+  if (effects === 'stars' || bgClass === 'bg-night' || bgClass === 'bg-rooftop') {
+    starsEl.classList.remove('hidden');
+    createStars();
+  }
+}
+
+function updateAffection() {
+  const hearts = (n) => {
+    const full = Math.min(Math.floor(n / 2), 5);
+    const half = n % 2 && full < 5 ? 1 : 0;
+    const empty = 5 - full - half;
+    return '♥'.repeat(full) + (half ? '♡' : '') + '♡'.repeat(empty);
+  };
+  affEl.innerHTML = `
+    <div class="affection-item">
+      <span style="color:#FF69B4">陽菜</span>
+      <span class="affection-hearts">${hearts(state.affection.hina)}</span>
+    </div>
+    <div class="affection-item">
+      <span style="color:#4FC3F7">蓮</span>
+      <span class="affection-hearts">${hearts(state.affection.ren)}</span>
+    </div>
+  `;
+}
+
+function updateDay(day) {
+  state.day = day;
+  dayEl.textContent = `${day}日目`;
+}
+
+function showCharacter(charId) {
+  if (!charId) { charEl.innerHTML = ''; return; }
+  if (CHARACTER_SVG[charId]) {
+    charEl.innerHTML = CHARACTER_SVG[charId];
+  } else {
+    charEl.innerHTML = '';
+  }
+  charEl.style.animation = 'none';
+  charEl.offsetHeight;
+  charEl.style.animation = 'charAppear 0.6s ease-out';
+}
+
+function typeText(text, callback) {
+  state.typing = true;
+  state.currentText = text;
+  dialogueEl.textContent = '';
+  clickInd.classList.add('hidden');
+  let i = 0;
+  function type() {
+    if (!state.typing) {
+      dialogueEl.textContent = text;
+      clickInd.classList.remove('hidden');
+      if (callback) callback();
+      return;
+    }
+    if (i < text.length) {
+      dialogueEl.textContent += text[i];
+      i++;
+      state.typingTimeout = setTimeout(type, text[i-1] === '\n' ? 200 : 35);
+    } else {
+      state.typing = false;
+      clickInd.classList.remove('hidden');
+      if (callback) callback();
+    }
+  }
+  type();
+}
+
+function skipTyping() {
+  if (state.typing) {
+    state.typing = false;
+    clearTimeout(state.typingTimeout);
+    dialogueEl.textContent = state.currentText;
+    clickInd.classList.remove('hidden');
+    return true;
+  }
+  return false;
+}
+
+function showChoices(options) {
+  choicesEl.innerHTML = '';
+  choicesEl.classList.remove('hidden');
+  textbox.classList.add('hidden');
+  clickInd.classList.add('hidden');
+
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt.text;
+    btn.style.animationDelay = i * 0.1 + 's';
+    btn.onclick = () => {
+      if (opt.effects) {
+        for (const [k, v] of Object.entries(opt.effects)) {
+          state.affection[k] = Math.max(0, (state.affection[k] || 0) + v);
+        }
+        updateAffection();
+      }
+      if (opt.flag) state.flags[opt.flag] = true;
+      choicesEl.classList.add('hidden');
+      textbox.classList.remove('hidden');
+
+      if (opt.next !== undefined) {
+        state.scene = opt.next;
+        state.step = 0;
+        playScene();
+      } else {
+        state.step++;
+        playStep();
+      }
+    };
+    choicesEl.appendChild(btn);
+  });
+}
+
+let endingSteps = null;
+let endingKey = null;
+
+function playStep() {
+  const scene = endingSteps || SCENES[state.scene];
+  const steps = scene.steps || [];
+
+  // Find the next valid step
+  while (state.step < steps.length) {
+    const step = steps[state.step];
+    if (step.condition && !step.condition()) {
+      state.step++;
+      continue;
+    }
+    break;
+  }
+
+  if (state.step >= steps.length) {
+    if (endingSteps) {
+      showEndingScreen();
+      return;
+    }
+    const nextScene = scene.next;
+    if (nextScene === -1) {
+      // Branch to ending
+      endingKey = getEnding();
+      const ending = ENDINGS[endingKey];
+      endingSteps = ending;
+      state.step = 0;
+      setBackground(ending.bg, ending.effects);
+      playStep();
+      return;
+    }
+    state.scene = nextScene;
+    state.step = 0;
+    playScene();
+    return;
+  }
+
+  const step = steps[state.step];
+
+  if (step.choice) {
+    showChoices(step.options);
+    return;
+  }
+
+  const c = CHARACTERS[step.speaker];
+  speakerEl.textContent = c.name;
+  speakerEl.style.background = c.name ? c.color + '33' : 'transparent';
+  speakerEl.style.color = c.color;
+  showCharacter(step.char || null);
+
+  typeText(step.text);
+}
+
+function playScene() {
+  const scene = SCENES[state.scene];
+  if (!scene) return;
+
+  if (scene.day && scene.day !== state.day) {
+    updateDay(scene.day);
+  }
+  if (scene.bg) {
+    setBackground(scene.bg, scene.effects);
+  }
+
+  state.step = 0;
+  playStep();
+}
+
+function showEndingScreen() {
+  const ending = ENDINGS[endingKey];
+  textbox.classList.add('hidden');
+  charEl.textContent = '';
+  dayEl.classList.add('hidden');
+  affEl.classList.add('hidden');
+
+  setBackground(ending.endBg, 'stars');
+
+  endingScreen.classList.remove('hidden');
+  endingScreen.innerHTML = `
+    <div class="ending-label">${ending.label}</div>
+    <h2 style="background: linear-gradient(135deg, #FFB7C5, #DDA0DD); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${ending.title}</h2>
+    <p>好感度：陽菜 ${'♥'.repeat(Math.min(Math.floor(state.affection.hina/2),5))} (${state.affection.hina})　蓮 ${'♥'.repeat(Math.min(Math.floor(state.affection.ren/2),5))} (${state.affection.ren})</p>
+    <button id="restart-btn" onclick="location.reload()">もう一度はじめから</button>
+  `;
+}
+
+function startGame() {
+  titleScreen.classList.add('hidden');
+  textbox.classList.remove('hidden');
+  dayEl.classList.remove('hidden');
+  affEl.classList.remove('hidden');
+
+  state.scene = 0;
+  state.step = 0;
+  state.affection = { hina: 0, ren: 0 };
+  state.day = 1;
+  state.flags = {};
+  endingSteps = null;
+  endingKey = null;
+
+  updateAffection();
+  updateDay(1);
+  playScene();
+}
+
+// Click handler
+document.getElementById('game').addEventListener('click', (e) => {
+  if (e.target.closest('.choice-btn') || e.target.closest('#start-btn') || e.target.closest('#restart-btn')) return;
+  if (titleScreen && !titleScreen.classList.contains('hidden')) return;
+  if (!endingScreen.classList.contains('hidden')) return;
+  if (!choicesEl.classList.contains('hidden')) return;
+
+  if (skipTyping()) return;
+
+  state.step++;
+  playStep();
+});
+
+// Title screen stars
+createStars();
+</script>
+</body>
+</html>
